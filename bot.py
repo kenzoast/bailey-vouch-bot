@@ -4,6 +4,9 @@ import discord
 from discord.ext import commands
 from utils.venv import get_venv_python
 import json
+import sqlite3
+from cogs.maintickets import TicketPanelView
+from cogs.maintickets import CloseTicketView
 
 # Load the main bot token from config.json
 with open("config.json") as config_file:
@@ -55,6 +58,8 @@ async def on_ready():
     print(f'{bot.user} is online and ready!')
     # Start all bots in the /bots folder
     start_all_bots()
+    bot.add_view(TicketPanelView(bot, sqlite3.connect("tickets.db"), 1309886590226661478))  # Use actual DB and category ID
+    bot.add_view(CloseTicketView(sqlite3.connect("tickets.db")))
 
 bot.load_extension('cogs.bot_setup')
 bot.load_extension('cogs.credits')
@@ -65,6 +70,7 @@ bot.load_extension('cogs.purge')
 bot.load_extension('cogs.cat')
 bot.load_extension('cogs.donate')
 bot.load_extension('cogs.rolemanagement')
+bot.load_extension('cogs.maintickets')
 
 # Run the main bot
 bot.run(TOKEN)
