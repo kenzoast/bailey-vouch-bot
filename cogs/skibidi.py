@@ -33,25 +33,26 @@ class SkibidiCog(commands.Cog):
             embed.set_footer(text="Use the arrows to view other sigma users.")
 
             # Create the navigation view
-            view = SigmaNavigationView(self.sigma_ids, current_index, ctx)
+            view = SigmaNavigationView(self.sigma_ids, current_index, ctx, self.bot)
             await ctx.respond(embed=embed, view=view, ephemeral=True)
         else:
             await ctx.respond("You're not sigma...", ephemeral=True)
 
 
 class SigmaNavigationView(View):
-    def __init__(self, sigma_ids, current_index, ctx):
+    def __init__(self, sigma_ids, current_index, ctx, bot):
         super().__init__()
         self.sigma_ids = sigma_ids
         self.current_index = current_index
         self.ctx = ctx
+        self.bot = bot
         self.add_item(SigmaNavigationButton(label="⬅️", direction=-1, view=self))
         self.add_item(SigmaNavigationButton(label="➡️", direction=1, view=self))
 
     async def update_embed(self, interaction):
         # Fetch the current user based on the index
         current_user_id = self.sigma_ids[self.current_index]
-        current_user = self.ctx.guild.get_member(current_user_id)
+        current_user = self.bot.get_user(current_user_id) or await self.bot.fetch_user(current_user_id)
 
         if current_user:
             embed = discord.Embed(
