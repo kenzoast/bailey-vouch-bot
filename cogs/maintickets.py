@@ -16,7 +16,7 @@ class TicketPanel(commands.Cog):
             )
         """)
         self.db.commit()
-        self.ticket_category_id = 1309886590226661478  # Replace with your category ID
+        self.ticket_category_id = 1312813869030178852  # Replace with your category ID
 
     @commands.slash_command()
     async def ticket_panel(self, ctx: discord.ApplicationContext):
