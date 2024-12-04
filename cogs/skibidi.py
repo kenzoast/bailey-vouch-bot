@@ -36,7 +36,7 @@ class SkibidiCog(commands.Cog):
             view = SigmaNavigationView(self.sigma_ids, current_index, ctx, self.bot)
             await ctx.respond(embed=embed, view=view, ephemeral=True)
         else:
-            await ctx.respond("You're not sigma...", ephemeral=True)
+            await ctx.respond("You're not sigma... run the /donate command to become sigma.", ephemeral=True)
 
 
 class SigmaNavigationView(View):
@@ -57,7 +57,7 @@ class SigmaNavigationView(View):
         if current_user:
             embed = discord.Embed(
                 title="Sigma Alert",
-                color=discord.Color.green()
+                color=discord.Color.gold()
             )
             embed.add_field(name="User", value=f"{current_user}", inline=True)
             embed.add_field(name="User ID", value=f"{current_user.id}", inline=True)
