@@ -25,7 +25,7 @@ class SkibidiCog(commands.Cog):
             # Create the embed
             embed = discord.Embed(
                 title="Sigma Alert",
-                color=discord.Color.green()
+                color=discord.Color.gold()
             )
             embed.add_field(name="User", value=f"{target_user}", inline=True)
             embed.add_field(name="User ID", value=f"{target_user.id}", inline=True)
