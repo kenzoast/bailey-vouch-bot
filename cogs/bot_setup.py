@@ -9,6 +9,7 @@ from utils.database import init_db
 from utils.venv import get_venv_python
 from discord.errors import HTTPException, LoginFailure
 
+# Initialize the database connection
 conn, c = init_db()
 
 class BotSetup(commands.Cog):
@@ -84,25 +85,12 @@ class BotSetup(commands.Cog):
                     await ctx.respond(f"Error: {str(e)}", ephemeral=True)
                     return
                 
-                # Start the bot using subprocess in the correct directory and venv's python
+                # Validate the bot token and intents first
+                test_bot = discord.Client(intents=discord.Intents.default())
+                
                 try:
-                    # Validate the bot token first
-                    test_bot = discord.Client(intents=discord.Intents.default())
-                    await test_bot.login(token)  # Will throw error if token is invalid
+                    await test_bot.login(token)  # Attempt to log in
                     await test_bot.close()
-
-                    # If token is valid, proceed to run the bot in subprocess
-                    subprocess.Popen([venv_python, bot_file_name], cwd=new_bot_folder)
-
-                    # Now we deduct the credit since everything went well
-                    self.update_credits(ctx.author.id, user_credits - 1)
-
-                    embed = discord.Embed(
-                        title="Bot Creation Success",
-                        description=f"Bot `{bot_name}` has been created and started! You have {user_credits - 1} credits left.",
-                        color=discord.Color.green()
-                    )
-                    await ctx.respond(embed=embed, ephemeral=True)
                 except LoginFailure:
                     embed = discord.Embed(
                         title="Invalid Token",
@@ -111,10 +99,43 @@ class BotSetup(commands.Cog):
                     )
                     await ctx.respond(embed=embed, ephemeral=True)
                     shutil.rmtree(new_bot_folder)  # Clean up if bot creation fails
+                    return
+                except discord.PrivilegedIntentsRequired:
+                    embed = discord.Embed(
+                        title="Intent Error",
+                        description="Your bot token is valid, but intents required to run the bot are disabled. Please enable the required intents (e.g., 'Server Members Intent') in the Discord Developer Portal.",
+                        color=discord.Color.orange()
+                    )
+                    await ctx.respond(embed=embed, ephemeral=True)
+                    shutil.rmtree(new_bot_folder)  # Clean up if bot creation fails
+                    return
+                except Exception as e:
+                    embed = discord.Embed(
+                        title="Login Error",
+                        description=f"An unexpected error occurred during login: {str(e)}",
+                        color=discord.Color.red()
+                    )
+                    await ctx.respond(embed=embed, ephemeral=True)
+                    shutil.rmtree(new_bot_folder)  # Clean up if bot creation fails
+                    return
+                
+                # If token and intents are valid, proceed to run the bot in subprocess
+                try:
+                    subprocess.Popen([venv_python, bot_file_name], cwd=new_bot_folder)
+
+                    # Deduct credits since everything went well
+                    self.update_credits(ctx.author.id, user_credits - 1)
+
+                    embed = discord.Embed(
+                        title="Bot Creation Success",
+                        description=f"Bot `{bot_name}` has been created and started! You have {user_credits - 1} credits left.",
+                        color=discord.Color.green()
+                    )
+                    await ctx.respond(embed=embed, ephemeral=True)
                 except Exception as e:
                     embed = discord.Embed(
                         title="Error",
-                        description=f"An error occurred: {str(e)}",
+                        description=f"An error occurred while starting the bot: {str(e)}",
                         color=discord.Color.red()
                     )
                     await ctx.respond(embed=embed, ephemeral=True)
