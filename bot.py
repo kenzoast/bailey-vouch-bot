@@ -72,8 +72,8 @@ bot.load_extension('cogs.donate')
 bot.load_extension('cogs.rolemanagement')
 bot.load_extension('cogs.maintickets')
 bot.load_extension('cogs.time')
-bot.load_extension('cogs.ticket')
 bot.load_extension('cogs.rockpaperscissors')
+bot.load_extension('cogs.skibidi')
 
 # Run the main bot
 bot.run(TOKEN)
