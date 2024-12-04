@@ -62,7 +62,7 @@ class SigmaNavigationView(View):
             embed.add_field(name="User", value=f"{current_user}", inline=True)
             embed.add_field(name="User ID", value=f"{current_user.id}", inline=True)
             embed.add_field(name="Sigma", value="True", inline=False)
-            embed.set_footer(text="Use the arrows to view other sigma users.")
+            embed.set_footer(text="Use the arrows to view other sigma users, to become sigma run /donate.")
             await interaction.response.edit_message(embed=embed, view=self)
         else:
             await interaction.response.send_message("User not found.", ephemeral=True)
