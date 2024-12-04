@@ -126,7 +126,7 @@ class TicketPanelView(discord.ui.View):
             description="Apply to become a staff member by clicking the button below.",
             color=discord.Color.green()
         )
-        view = LinkButtonView(label="Apply Now", url="https://example.com/staff-application")
+        view = LinkButtonView(label="Apply Now", url="https://forms.gle/vFsjrELj3vszyLrSA")
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
     @discord.ui.button(label="Purchase Premium", style=discord.ButtonStyle.blurple, emoji="⭐", custom_id="purchase_premium")
@@ -136,7 +136,7 @@ class TicketPanelView(discord.ui.View):
             description="Upgrade to premium for exclusive benefits by clicking the button below.",
             color=discord.Color.blue()
         )
-        view = LinkButtonView(label="Purchase Premium", url="https://example.com/premium")
+        view = LinkButtonView(label="Purchase Premium", url="https://bailey.sellauth.com/")
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
 
