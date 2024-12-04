@@ -43,16 +43,16 @@ class BotSetup(commands.Cog):
 
         # Display a confirmation with buttons
         embed = discord.Embed(
-            title="Confirm Bot Creation",
-            description="Are you sure you want to create and start a new bot? This action will deduct 1 credit from your account.",
+            title="Warning",
+            description="PLEASE do note that if your bot intents are off, your bot will NOT start and your credit will be wasted till you contact support.",
             color=discord.Color.blue()
         )
 
         view = View()
 
         # Proceed button
-        proceed_button = Button(label="Proceed", style=discord.ButtonStyle.green)
-        back_button = Button(label="Back", style=discord.ButtonStyle.red)
+        proceed_button = Button(label="My intents are on.", style=discord.ButtonStyle.green)
+        back_button = Button(label="No, let me turn them on.", style=discord.ButtonStyle.red)
 
         async def proceed_callback(interaction):
             if interaction.user.id != ctx.author.id:
