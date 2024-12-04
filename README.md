@@ -1,3 +1,3 @@
 python3 -m venv venv
 source venv/bin/activate
-this time for sure
+ths time 100%
