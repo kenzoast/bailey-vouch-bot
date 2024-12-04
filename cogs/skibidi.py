@@ -14,7 +14,7 @@ class SkibidiCog(commands.Cog):
             1169382966535925902, 1288177542750142658, 1235525090108641311
         ]  # Replace with your desired IDs
 
-    @discord.slash_command(name="skibidi", description="Check if you're sigma or check another user.")
+    @discord.slash_command(name="skibidi", description="Check if you're sigma or check another user. Run /donate to become sigma.")
     async def skibidi(self, ctx: discord.ApplicationContext, user: discord.Member = None):
         # Determine the user to check (default to the command author)
         target_user = user or ctx.author
