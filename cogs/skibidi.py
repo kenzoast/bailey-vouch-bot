@@ -31,7 +31,7 @@ class SkibidiCog(commands.Cog):
             embed.add_field(name="User ID", value=f"{target_user.id}", inline=True)
             embed.add_field(name="Sigma", value="True", inline=False)
             embed.set_footer(text="Use the arrows to view other sigma users.")
-            
+
             # Create the navigation view
             view = SigmaNavigationView(self.sigma_ids, current_index, ctx)
             await ctx.respond(embed=embed, view=view, ephemeral=True)
@@ -45,13 +45,14 @@ class SigmaNavigationView(View):
         self.sigma_ids = sigma_ids
         self.current_index = current_index
         self.ctx = ctx
-        self.update_buttons()
+        self.add_item(SigmaNavigationButton(label="⬅️", direction=-1, view=self))
+        self.add_item(SigmaNavigationButton(label="➡️", direction=1, view=self))
 
     async def update_embed(self, interaction):
         # Fetch the current user based on the index
         current_user_id = self.sigma_ids[self.current_index]
         current_user = self.ctx.guild.get_member(current_user_id)
-        
+
         if current_user:
             embed = discord.Embed(
                 title="Sigma Alert",
@@ -60,28 +61,23 @@ class SigmaNavigationView(View):
             embed.add_field(name="User", value=f"{current_user}", inline=True)
             embed.add_field(name="User ID", value=f"{current_user.id}", inline=True)
             embed.add_field(name="Sigma", value="True", inline=False)
-            embed.set_footer(text="This command was suggested by connor.")
+            embed.set_footer(text="Use the arrows to view other sigma users.")
             await interaction.response.edit_message(embed=embed, view=self)
         else:
             await interaction.response.send_message("User not found.", ephemeral=True)
 
-    def update_buttons(self):
-        # Disable the buttons if we are at the start or end of the list
-        self.clear_items()
-        self.add_item(Button(label="⬅️", style=discord.ButtonStyle.secondary, custom_id="prev", disabled=self.current_index <= 0))
-        self.add_item(Button(label="➡️", style=discord.ButtonStyle.secondary, custom_id="next", disabled=self.current_index >= len(self.sigma_ids) - 1))
 
-    @discord.ui.button(label="⬅️", style=discord.ButtonStyle.secondary)
-    async def previous(self, button: Button, interaction: discord.Interaction):
-        self.current_index -= 1
-        self.update_buttons()
-        await self.update_embed(interaction)
+class SigmaNavigationButton(Button):
+    def __init__(self, label, direction, view):
+        super().__init__(label=label, style=discord.ButtonStyle.secondary)
+        self.direction = direction
+        self.parent_view = view
 
-    @discord.ui.button(label="➡️", style=discord.ButtonStyle.secondary)
-    async def next(self, button: Button, interaction: discord.Interaction):
-        self.current_index += 1
-        self.update_buttons()
-        await self.update_embed(interaction)
+    async def callback(self, interaction: discord.Interaction):
+        # Update the index based on the direction
+        self.parent_view.current_index += self.direction
+        self.parent_view.current_index %= len(self.parent_view.sigma_ids)  # Ensure index loops around
+        await self.parent_view.update_embed(interaction)
 
 
 # Setup function to add the cog
