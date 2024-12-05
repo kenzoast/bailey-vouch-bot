@@ -75,6 +75,7 @@ bot.load_extension('cogs.time')
 bot.load_extension('cogs.rockpaperscissors')
 bot.load_extension('cogs.skibidi')
 bot.load_extension('cogs.coinflip')
+bot.load_extension('cogs.avatar')
 
 # Run the main bot
 bot.run(TOKEN)
