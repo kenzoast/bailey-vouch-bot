@@ -76,7 +76,7 @@ bot.load_extension('cogs.rockpaperscissors')
 bot.load_extension('cogs.skibidi')
 bot.load_extension('cogs.coinflip')
 bot.load_extension('cogs.avatar')
-bot.load_extension('cogs.userinfo')
+bot.load_extension('cogs.info')
 
 # Run the main bot
 bot.run(TOKEN)
