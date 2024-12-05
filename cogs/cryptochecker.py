@@ -3,7 +3,7 @@ from discord.ext import commands
 import requests
 from datetime import datetime
 
-class CryptoConversionCog(commands.Cog):
+class CryptoConversion(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.api_url = "https://api.coingecko.com/api/v3/simple/price"
@@ -95,4 +95,4 @@ class CryptoConversionCog(commands.Cog):
         await ctx.respond(embed=embed)
 
 def setup(bot):
-    bot.add_cog(CryptoConversionCog(bot))
+    bot.add_cog(CryptoConversion(bot))
