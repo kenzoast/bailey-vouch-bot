@@ -10,27 +10,17 @@ class CryptoChecker(commands.Cog):
         self.supported_cryptos = {
             "btc": "bitcoin",
             "sol": "solana", 
-            "ltc": "litecoin",
-            "eth": "ethereum",
-            "doge": "dogecoin"
+            "ltc": "litecoin"
         }
 
-    @commands.command(name="crypto")
-    async def crypto_command(self, ctx, symbol: str = None):
+    @commands.slash_command(name="crypto", description="Check the price of BTC, SOL, or LTC.")
+    async def crypto(self, ctx: discord.ApplicationContext, symbol: str):
         """
-        Check cryptocurrency prices in any chat channel.
-        Usage: !crypto <symbol>
-        Supported symbols: BTC, SOL, LTC, ETH, DOGE
+        Check the price of Bitcoin (BTC), Solana (SOL), or Litecoin (LTC).
         """
-        if not symbol:
-            await ctx.send("Please specify a cryptocurrency symbol. Supported: " + 
-                           ", ".join(symbol.upper() for symbol in self.supported_cryptos.keys()))
-            return
-
         symbol = symbol.lower()
         if symbol not in self.supported_cryptos:
-            await ctx.send("Invalid symbol. Use one of the following: " + 
-                           ", ".join(symbol.upper() for symbol in self.supported_cryptos.keys()))
+            await ctx.respond("Invalid symbol. Use one of the following: BTC, SOL, LTC.", ephemeral=True)
             return
 
         try:
@@ -43,7 +33,7 @@ class CryptoChecker(commands.Cog):
             response.raise_for_status()
             data = response.json()
         except requests.exceptions.RequestException:
-            await ctx.send("Failed to fetch price data. Please try again later.")
+            await ctx.respond("Failed to fetch price data. Please try again later.", ephemeral=True)
             return
 
         # Process the price data
@@ -51,16 +41,14 @@ class CryptoChecker(commands.Cog):
         price_usd = data.get(coin_id, {}).get("usd")
         
         if not price_usd:
-            await ctx.send(f"Price data for {symbol.upper()} is unavailable at the moment.")
+            await ctx.respond(f"Price data for {symbol.upper()} is unavailable at the moment.", ephemeral=True)
             return
 
         # Determine full coin name
         name_map = {
             "bitcoin": "Bitcoin",
             "solana": "Solana",
-            "litecoin": "Litecoin",
-            "ethereum": "Ethereum",
-            "dogecoin": "Dogecoin"
+            "litecoin": "Litecoin"
         }
         name = name_map[coin_id]
 
@@ -74,15 +62,7 @@ class CryptoChecker(commands.Cog):
         embed.set_footer(text="Price data retrieved on")
         
         # Send the embed
-        await ctx.send(embed=embed)
-
-    @commands.slash_command(name="crypto", description="Check the price of cryptocurrencies.")
-    async def crypto_slash(self, ctx: discord.ApplicationContext, symbol: str):
-        """
-        Slash command version of the crypto price checker
-        """
-        # Reuse the same logic as the text command
-        await self.crypto_command(ctx, symbol)
+        await ctx.respond(embed=embed)
 
 def setup(bot):
     bot.add_cog(CryptoChecker(bot))
