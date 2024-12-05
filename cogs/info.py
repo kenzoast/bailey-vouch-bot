@@ -13,22 +13,14 @@ class Info(commands.Cog):
         # Use the provided user or default to the command user
         user = user or ctx.author
 
-        # Embed fields for user information
+        # Create the embed with only username and user ID
         embed = discord.Embed(
             title=f"Information about {user.name}",
-            color=discord.Color.blue(),
-            timestamp=ctx.created_at
+            color=discord.Color.blue()
         )
-        embed.set_thumbnail(url=user.avatar.url)  # Add user's avatar as the thumbnail
-
-        # Add fields for basic user information
         embed.add_field(name="Username", value=f"{user.name}#{user.discriminator}", inline=False)
         embed.add_field(name="User ID", value=user.id, inline=False)
-        embed.add_field(name="Account Created", value=user.created_at.strftime("%Y-%m-%d %H:%M:%S UTC"), inline=False)
 
-        # Add footer
-        embed.set_footer(text=f"Requested by {ctx.author.name}", icon_url=ctx.author.avatar.url)
-        
         # Respond with the embed
         await ctx.respond(embed=embed)
 
