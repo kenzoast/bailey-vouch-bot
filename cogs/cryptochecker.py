@@ -3,7 +3,7 @@ from discord.ext import commands
 import requests
 from datetime import datetime
 
-class CryptoCog(commands.Cog):
+class CryptoConversionCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.api_url = "https://api.coingecko.com/api/v3/simple/price"
@@ -42,88 +42,57 @@ class CryptoCog(commands.Cog):
         except requests.exceptions.RequestException:
             return None
     
-    @commands.slash_command(name="crypto", description="Check the price of BTC, SOL, or LTC.")
-    async def crypto(self, ctx: discord.ApplicationContext, symbol: str):
+    @commands.slash_command(name="usdtocrypto", description="Convert USD to multiple cryptocurrencies.")
+    async def usd_to_crypto(self, ctx: discord.ApplicationContext, amount: float):
         """
-        Check the price of Bitcoin (BTC), Solana (SOL), or Litecoin (LTC).
-        """
-        symbol = symbol.lower()
-        if symbol not in self.supported_cryptos:
-            await ctx.respond("Invalid symbol. Use one of the following: BTC, SOL, LTC.", ephemeral=True)
-            return
-        
-        price_usd = self.get_crypto_price(symbol)
-        
-        if not price_usd:
-            await ctx.respond(f"Price data for {symbol.upper()} is unavailable at the moment.", ephemeral=True)
-            return
-        
-        # Determine full coin name
-        name_map = {
-            "bitcoin": "Bitcoin",
-            "solana": "Solana",
-            "litecoin": "Litecoin"
-        }
-        name = name_map[self.supported_cryptos[symbol]]
-        
-        # Create embed for response
-        embed = discord.Embed(
-            title=f"{name} (Symbol: {symbol.upper()})",
-            description=f"**Price (USD):** ${price_usd:,.2f}",
-            color=discord.Color.gold(),
-            timestamp=datetime.utcnow()
-        )
-        embed.set_footer(text="Price data retrieved on")
-        
-        # Send the embed
-        await ctx.respond(embed=embed)
-    
-    @commands.slash_command(name="convert", description="Convert USD to equivalent crypto amount.")
-    async def convert(self, ctx: discord.ApplicationContext, amount: float, symbol: str):
-        """
-        Convert a USD amount to equivalent cryptocurrency amount.
+        Convert a USD amount to equivalent amounts of multiple cryptocurrencies.
         
         :param amount: USD amount to convert
-        :param symbol: Cryptocurrency symbol (BTC, SOL, or LTC)
         """
-        symbol = symbol.lower()
-        if symbol not in self.supported_cryptos:
-            await ctx.respond("Invalid symbol. Use one of the following: BTC, SOL, LTC.", ephemeral=True)
-            return
-        
-        # Get current price
-        price_usd = self.get_crypto_price(symbol)
-        
-        if not price_usd:
-            await ctx.respond(f"Price data for {symbol.upper()} is unavailable at the moment.", ephemeral=True)
-            return
-        
-        # Calculate crypto amount
-        crypto_amount = amount / price_usd
-        
-        # Determine full coin name
-        name_map = {
-            "bitcoin": "Bitcoin",
-            "solana": "Solana",
-            "litecoin": "Litecoin"
-        }
-        name = name_map[self.supported_cryptos[symbol]]
-        
-        # Create embed for response
+        # Create embed for conversion results
         embed = discord.Embed(
-            title=f"USD to {name} Conversion",
-            description=(
-                f"**USD Amount:** ${amount:,.2f}\n"
-                f"**{name} Price:** ${price_usd:,.2f}\n"
-                f"**{name} Amount:** {crypto_amount:,.6f}"
-            ),
-            color=discord.Color.green(),
+            title="USD Cryptocurrency Conversion",
+            description=f"**USD Amount:** ${amount:,.2f}",
+            color=discord.Color.blue(),
             timestamp=datetime.utcnow()
         )
+        
+        # Track whether any conversions were successful
+        conversion_successful = False
+        
+        # Perform conversions for each supported cryptocurrency
+        for symbol, coin_id in self.supported_cryptos.items():
+            price_usd = self.get_crypto_price(symbol)
+            
+            if price_usd:
+                # Calculate crypto amount
+                crypto_amount = amount / price_usd
+                
+                # Determine full coin name
+                name_map = {
+                    "bitcoin": "Bitcoin",
+                    "solana": "Solana",
+                    "litecoin": "Litecoin"
+                }
+                name = name_map[coin_id]
+                
+                # Add conversion to embed
+                embed.add_field(
+                    name=f"{name} ({symbol.upper()})",
+                    value=f"**Amount:** {crypto_amount:,.6f}\n**Price:** ${price_usd:,.2f}",
+                    inline=True
+                )
+                
+                conversion_successful = True
+        
+        if not conversion_successful:
+            await ctx.respond("Unable to fetch cryptocurrency prices at the moment.", ephemeral=True)
+            return
+        
         embed.set_footer(text="Conversion calculated on")
         
         # Send the embed
         await ctx.respond(embed=embed)
 
 def setup(bot):
-    bot.add_cog(CryptoCog(bot))
+    bot.add_cog(CryptoConversionCog(bot))
