@@ -79,7 +79,7 @@ bot.load_extension('cogs.avatar')
 bot.load_extension('cogs.info')
 bot.load_extension('cogs.serverinfo')
 bot.load_extension('cogs.cryptochecker')
-bot.load_extension('cogs.CryptoConversion')
+bot.load_extension('cogs.cryptoconversion')
 
 
 # Run the main bot
