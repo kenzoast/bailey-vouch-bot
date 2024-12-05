@@ -1,36 +1,82 @@
+import os
+import subprocess
 import discord
 from discord.ext import commands
+from utils.venv import get_venv_python
+import json
+import sqlite3
+from cogs.maintickets import TicketPanelView
+from cogs.maintickets import CloseTicketView
 
-class UserInfo(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
+# Load the main bot token from config.json
+with open("config.json") as config_file:
+    config = json.load(config_file)
+    TOKEN = config.get("main_token")
 
-    @commands.slash_command(name="info", description="Fetch basic information about a user.")
-    async def user_info(self, ctx: discord.ApplicationContext, user: discord.User = None):
-        """
-        Fetch basic information about a user or yourself if no user is specified.
-        """
-        # Use the provided user or default to the command user
-        user = user or ctx.author
+if TOKEN is None:
+    raise ValueError("Bot token is not set in the config.json file.")
 
-        # Embed fields for user information
-        embed = discord.Embed(
-            title=f"Information about {user.name}",
-            color=discord.Color.blue(),
-            timestamp=ctx.created_at
-        )
-        embed.set_thumbnail(url=user.avatar.url)  # Add user's avatar as the thumbnail
+intents = discord.Intents.default()
+bot = discord.Bot(intents=intents)
 
-        # Add fields for basic user information
-        embed.add_field(name="Username", value=f"{user.name}#{user.discriminator}", inline=False)
-        embed.add_field(name="User ID", value=user.id, inline=False)
-        embed.add_field(name="Account Created", value=user.created_at.strftime("%Y-%m-%d %H:%M:%S UTC"), inline=False)
+# Function to start all bots in the /bots directory
+def start_all_bots():
+    bots_folder = "bots"
+    
+    # Check if the bots folder exists
+    if os.path.exists(bots_folder):
+        # Iterate through all folders inside /bots
+        for bot_folder in os.listdir(bots_folder):
+            bot_path = os.path.join(bots_folder, bot_folder)
+            
+            # Only process directories that contain bot.py
+            if os.path.isdir(bot_path) and "bot.py" in os.listdir(bot_path):
+                config_path = os.path.join(bot_path, "config.json")
+                if not os.path.exists(config_path):
+                    print(f"Skipping {bot_folder}: config.json not found.")
+                    continue
 
-        # Add footer
-        embed.set_footer(text=f"Requested by {ctx.author.name}", icon_url=ctx.author.avatar.url)
-        
-        # Respond with the embed
-        await ctx.respond(embed=embed)
+                # Read the virtual environment name from the config.json, default to 'listing'
+                with open(config_path, "r") as config_file:
+                    config_data = json.load(config_file)
+                    venv_name = config_data.get("venv_name", "listing")  # Default to 'listing'
 
-def setup(bot):
-    bot.add_cog(Info(bot))
+                # Start the bot using the virtual environment
+                try:
+                    venv_python = get_venv_python(venv_name)
+                    # Start the bot.py using subprocess
+                    subprocess.Popen([venv_python, "bot.py"], cwd=bot_path)
+                    print(f"Started bot in {bot_folder} using venv {venv_name}")
+                except FileNotFoundError:
+                    print(f"Python executable for {venv_name} not found in {bot_folder}")
+    else:
+        print("Bots folder not found.")
+
+
+@bot.event
+async def on_ready():
+    print(f'{bot.user} is online and ready!')
+    # Start all bots in the /bots folder
+    start_all_bots()
+    bot.add_view(TicketPanelView(bot, sqlite3.connect("tickets.db"), 1309886590226661478))  # Use actual DB and category ID
+    bot.add_view(CloseTicketView(sqlite3.connect("tickets.db")))
+
+bot.load_extension('cogs.bot_setup')
+bot.load_extension('cogs.credits')
+bot.load_extension('cogs.keys')
+bot.load_extension("cogs.userid") 
+bot.load_extension('cogs.currency')
+bot.load_extension('cogs.purge')
+bot.load_extension('cogs.cat')
+bot.load_extension('cogs.donate')
+bot.load_extension('cogs.rolemanagement')
+bot.load_extension('cogs.maintickets')
+bot.load_extension('cogs.time')
+bot.load_extension('cogs.rockpaperscissors')
+bot.load_extension('cogs.skibidi')
+bot.load_extension('cogs.coinflip')
+bot.load_extension('cogs.avatar')
+bot.load_extension('cogs.info')
+
+# Run the main bot
+bot.run(TOKEN)
