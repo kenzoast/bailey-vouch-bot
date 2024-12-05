@@ -6,11 +6,11 @@ from datetime import datetime
 class CryptoChecker(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.api_key = "7ba79e3850214db8a098bb30d95cdcc8"  # Replace with your BlockCypher API key
-        self.api_urls = {
-            "btc": f"https://api.blockcypher.com/v1/btc/main?token={self.api_key}",
-            "ltc": f"https://api.blockcypher.com/v1/ltc/main?token={self.api_key}",
-            "sol": "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd"
+        self.api_url = "https://api.coingecko.com/api/v3/simple/price"
+        self.supported_cryptos = {
+            "btc": "bitcoin",
+            "sol": "solana", 
+            "ltc": "litecoin"
         }
 
     @commands.slash_command(name="crypto", description="Check the price of BTC, SOL, or LTC.")
@@ -19,14 +19,17 @@ class CryptoChecker(commands.Cog):
         Check the price of Bitcoin (BTC), Solana (SOL), or Litecoin (LTC).
         """
         symbol = symbol.lower()
-
-        if symbol not in self.api_urls:
+        if symbol not in self.supported_cryptos:
             await ctx.respond("Invalid symbol. Use one of the following: BTC, SOL, LTC.", ephemeral=True)
             return
 
         try:
             # Fetch price data
-            response = requests.get(self.api_urls[symbol])
+            params = {
+                "ids": self.supported_cryptos[symbol],
+                "vs_currencies": "usd"
+            }
+            response = requests.get(self.api_url, params=params)
             response.raise_for_status()
             data = response.json()
         except requests.exceptions.RequestException:
@@ -34,16 +37,20 @@ class CryptoChecker(commands.Cog):
             return
 
         # Process the price data
-        if symbol in ["btc", "ltc"]:
-            price_usd = data.get("usd", {}).get("rate", None)  # Modify if API response structure changes
-            name = "Bitcoin" if symbol == "btc" else "Litecoin"
-        elif symbol == "sol":
-            price_usd = data.get("solana", {}).get("usd", None)
-            name = "Solana"
-
+        coin_id = self.supported_cryptos[symbol]
+        price_usd = data.get(coin_id, {}).get("usd")
+        
         if not price_usd:
             await ctx.respond(f"Price data for {symbol.upper()} is unavailable at the moment.", ephemeral=True)
             return
+
+        # Determine full coin name
+        name_map = {
+            "bitcoin": "Bitcoin",
+            "solana": "Solana",
+            "litecoin": "Litecoin"
+        }
+        name = name_map[coin_id]
 
         # Create embed for response
         embed = discord.Embed(
@@ -53,7 +60,7 @@ class CryptoChecker(commands.Cog):
             timestamp=datetime.utcnow()
         )
         embed.set_footer(text="Price data retrieved on")
-
+        
         # Send the embed
         await ctx.respond(embed=embed)
 
