@@ -13,13 +13,14 @@ class Info(commands.Cog):
         # Use the provided user or default to the command user
         user = user or ctx.author
 
-        # Create the embed with only username and user ID
+        # Create the embed with username, user ID, and profile picture
         embed = discord.Embed(
             title=f"Information about {user.name}",
             color=discord.Color.blue()
         )
         embed.add_field(name="Username", value=f"{user.name}#{user.discriminator}", inline=False)
         embed.add_field(name="User ID", value=user.id, inline=False)
+        embed.set_thumbnail(url=user.avatar.url)  # Add the user's profile picture as the thumbnail
 
         # Respond with the embed
         await ctx.respond(embed=embed)
