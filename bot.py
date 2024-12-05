@@ -78,6 +78,7 @@ bot.load_extension('cogs.coinflip')
 bot.load_extension('cogs.avatar')
 bot.load_extension('cogs.info')
 bot.load_extension('cogs.serverinfo')
+bot.load_extension('cogs.cryptochecker')
 
 # Run the main bot
 bot.run(TOKEN)
