@@ -79,6 +79,7 @@ bot.load_extension('cogs.avatar')
 bot.load_extension('cogs.info')
 bot.load_extension('cogs.serverinfo')
 bot.load_extension('cogs.cryptochecker')
+bot.load_extension('cogs.eightball')
 
 # Run the main bot
 bot.run(TOKEN)
