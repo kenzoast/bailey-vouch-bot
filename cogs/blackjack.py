@@ -165,4 +165,16 @@ class Blackjack(commands.Cog):
             hit_button = discord.ui.Button(label="Hit", style=discord.ButtonStyle.green)
             hit_button.callback = hit_callback
 
-            stand_button =
+            stand_button = discord.ui.Button(label="Stand", style=discord.ButtonStyle.red)
+            stand_button.callback = stand_callback
+
+            view.add_item(hit_button)
+            view.add_item(stand_button)
+
+            # Send the initial game state
+            await ctx.respond(embed=create_embed(), view=view)
+        except Exception as e:
+            print(f"Error in blackjack command: {e}")
+
+def setup(bot):
+    bot.add_cog(Blackjack(bot))
