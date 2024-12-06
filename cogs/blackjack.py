@@ -46,35 +46,28 @@ class Blackjack(commands.Cog):
 
     def draw_card(self):
         """Draw a card for the game."""
-        try:
-            ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
-            suits = ['♠', '♥', '♦', '♣']
-            return f"{random.choice(ranks)}{random.choice(suits)}"
-        except Exception as e:
-            print(f"Error drawing card: {e}")
+        ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+        suits = ['♠', '♥', '♦', '♣']
+        return f"{random.choice(ranks)}{random.choice(suits)}"
 
     def calculate_hand_value(self, hand):
         """Calculate the total value of a hand."""
-        try:
-            values = {'2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 10, 'Q': 10, 'K': 10, 'A': 11}
-            total = 0
-            aces = 0
+        values = {'2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 10, 'Q': 10, 'K': 10, 'A': 11}
+        total = 0
+        aces = 0
 
-            for card in hand:
-                rank = card[:-1]  # Remove the suit
-                total += values[rank]
-                if rank == 'A':
-                    aces += 1
+        for card in hand:
+            rank = card[:-1]  # Remove the suit
+            total += values[rank]
+            if rank == 'A':
+                aces += 1
 
-            # Adjust for Aces if the total is over 21
-            while total > 21 and aces:
-                total -= 10
-                aces -= 1
+        # Adjust for Aces if the total is over 21
+        while total > 21 and aces:
+            total -= 10
+            aces -= 1
 
-            return total
-        except Exception as e:
-            print(f"Error calculating hand value: {e}")
-            return 0
+        return total
 
     @commands.slash_command(name="blackjack", description="Play a game of blackjack.")
     async def blackjack(self, ctx, bet: int):
@@ -140,7 +133,6 @@ class Blackjack(commands.Cog):
                     return
 
                 # Dealer's turn
-                nonlocal dealer_value
                 while dealer_value < 17:
                     dealer_hand.append(self.draw_card())
                     dealer_value = self.calculate_hand_value([card[:-1] for card in dealer_hand])
