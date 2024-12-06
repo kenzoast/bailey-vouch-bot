@@ -56,7 +56,7 @@ class CryptoChecker(commands.Cog):
         embed = discord.Embed(
             title=f"{name} (Symbol: {symbol.upper()})",
             description=f"**Price (USD):** ${price_usd:,.2f}",
-            color=discord.Color.gold(),
+            color=discord.Color.brand_red(),
             timestamp=datetime.utcnow()
         )
         embed.set_footer(text="Price data retrieved on")
