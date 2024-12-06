@@ -18,7 +18,7 @@ class CoinFlip(commands.Cog):
         embed = discord.Embed(
             title="Coin Flip",
             description=f"The coin landed on **{result}**!",
-            color=discord.Color.orange()
+            color=discord.Color.brand_red()
         )
         embed.set_footer(text="Powered by discord.gg/bailey!")
         
