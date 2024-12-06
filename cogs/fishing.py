@@ -55,11 +55,11 @@ class Fishing(commands.Cog):
     async def fish(self, ctx):
         """Fish for random fish and earn money."""
         fish_rarities = {
-            "Common Fish": {"chance": 50, "value": 10},
-            "Uncommon Fish": {"chance": 30, "value": 25},
-            "Rare Fish": {"chance": 15, "value": 50},
-            "Epic Fish": {"chance": 4, "value": 100},
-            "Legendary Fish": {"chance": 1, "value": 250},
+            "Common Fish": {"chance": 55, "value": 1},
+            "Uncommon Fish": {"chance": 25, "value": 5},
+            "Rare Fish": {"chance": 15, "value": 10},
+            "Epic Fish": {"chance": 4, "value": 15},
+            "Legendary Fish": {"chance": 1, "value": 100},
         }
 
         # Determine which fish is caught based on chances
