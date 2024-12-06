@@ -38,7 +38,7 @@ class EightBall(commands.Cog):
         embed = discord.Embed(
             title="🎱 The Magic 8-Ball",
             description=f"**Your Question:** {question}\n**Answer:** {answer}",
-            color=discord.Color.blurple()
+            color=discord.Color.brand_red()
         )
         embed.set_footer(text="The Magic 8-Ball has spoken!")
 
