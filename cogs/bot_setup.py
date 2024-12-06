@@ -8,7 +8,7 @@ from discord.ext import commands
 from discord.ui import View, Button
 from utils.database import init_db
 from utils.venv import get_venv_python
-from discord.errors import HTTPException, LoginFailure
+from discord.errors import LoginFailure
 
 # Initialize the database connection
 conn, c = init_db()
@@ -31,9 +31,7 @@ class BotSetup(commands.Cog):
         conn.commit()
 
     @slash_command(name="create", description="Set up a new bot with configurations")
-    async def setup_bot(self, ctx, 
-                        token: str,
-                        owner_id: str):
+    async def setup_bot(self, ctx, token: str, owner_id: str, client_id: str):
         # Check if the user has enough credits
         user_credits = self.load_credits(ctx.author.id)
         if user_credits <= 0:
@@ -145,11 +143,16 @@ class BotSetup(commands.Cog):
                         # Deduct credits since everything went well
                         self.update_credits(ctx.author.id, user_credits - 1)
 
+                        # Generate and send the bot invite link
+                        invite_link = f"https://discord.com/oauth2/authorize?client_id={client_id}&permissions=8&integration_type=0&scope=bot"
+
                         embed = discord.Embed(
                             title="Bot Creation Success",
                             description=f"Bot `{bot_name}` has been created and started! You have {user_credits - 1} credits left.",
                             color=discord.Color.green()
                         )
+                        embed.add_field(name="Bot Invite Link", value=f"[Click here to invite your bot]({invite_link})", inline=False)
+                        embed.set_footer(text="Ensure your bot's permissions and intents are correctly set!")
                         await interaction.response.send_message(embed=embed, ephemeral=True)
                     except Exception as e:
                         embed = discord.Embed(
