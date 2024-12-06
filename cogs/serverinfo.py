@@ -24,7 +24,7 @@ class ServerInfo(commands.Cog):
         # Create the embed
         embed = discord.Embed(
             title=f"Information about {server.name}",
-            color=discord.Color.purple()
+            color=discord.Color.brand_red()
         )
         embed.set_thumbnail(url=server.icon.url if server.icon else None)
         embed.add_field(name="Total Members", value=str(total_members), inline=False)
