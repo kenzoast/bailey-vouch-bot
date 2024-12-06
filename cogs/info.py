@@ -16,7 +16,7 @@ class Info(commands.Cog):
         # Create the embed with username, user ID, and profile picture
         embed = discord.Embed(
             title=f"Information about {user.name}",
-            color=discord.Color.blue()
+            color=discord.Color.brand_red()
         )
         embed.add_field(name="Username", value=f"{user.name}#{user.discriminator}", inline=False)
         embed.add_field(name="User ID", value=user.id, inline=False)
