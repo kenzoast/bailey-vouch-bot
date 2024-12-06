@@ -11,7 +11,7 @@ bot = commands.Bot(command_prefix=BOT_PREFIX, intents=intents)
 @bot.event
 async def on_ready():
     print(f'{bot.user} is online and ready!')
-    activity = discord.CustomActivity(name="you use discord.gg/bailey")  # Shows as "Playing with code"
+    activity = discord.CustomActivity(name="powered by discord.gg/bailey")  # Shows as "Playing with code"
     # Set the activity and status
     await bot.change_presence(status=discord.Status.online, activity=activity)
     
