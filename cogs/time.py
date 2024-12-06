@@ -55,7 +55,7 @@ class Time(commands.Cog):
         embed = discord.Embed(
             title=f'Current Time in {country.capitalize()}',
             description=time_str,
-            color=discord.Color.yellow()
+            color=discord.Color.brand_red()
         )
         embed.set_footer(text='Powered by discord.gg/bailey')
         await ctx.respond(embed=embed)
