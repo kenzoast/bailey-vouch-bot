@@ -16,7 +16,7 @@ class Avatar(commands.Cog):
         # Create the embed
         embed = discord.Embed(
             title=f"This is {user.name}'s profile picture.",
-            color=discord.Color.blue()
+            color=discord.Color.brand_red()
         )
         embed.set_image(url=user.avatar.url)  # Attach the user's avatar
         embed.set_footer(text="Thanks for using the Avatar command!")
