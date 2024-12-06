@@ -81,6 +81,7 @@ bot.load_extension('cogs.serverinfo')
 bot.load_extension('cogs.cryptochecker')
 bot.load_extension('cogs.eightball')
 bot.load_extension('cogs.fishing')
+bot.load_extension('cogs.blackjack')
 
 # Run the main bot
 bot.run(TOKEN)
