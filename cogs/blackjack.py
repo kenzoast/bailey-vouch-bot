@@ -126,7 +126,7 @@ class Blackjack(commands.Cog):
                 await interaction.response.send_message("This is not your game!", ephemeral=True)
                 return
 
-            print("Stand button clicked")  # Debugging line to see if the interaction is received
+            print("Stand button clicked!")  # Debugging line to confirm button press
 
             # Dealer's turn: The dealer must draw until their value is 17 or more
             while dealer_value < 17:
