@@ -3,9 +3,9 @@ from discord.ext import commands
 import random
 import sqlite3
 
-# Connect to SQLite database
+# Thread-safe SQLite connection
 DB_PATH = "fishing_game.db"
-conn = sqlite3.connect(DB_PATH)
+conn = sqlite3.connect(DB_PATH, check_same_thread=False)
 c = conn.cursor()
 
 # Ensure the users table exists
@@ -79,11 +79,11 @@ class Blackjack(commands.Cog):
         dealer_hand = [self.draw_card(), self.draw_card()]
         player_hand = [self.draw_card(), self.draw_card()]
 
-        dealer_value = self.calculate_hand_value([card[:-1] for card in dealer_hand])
-        player_value = self.calculate_hand_value([card[:-1] for card in player_hand])
-
-        # Function to display the game state
         def create_embed():
+            """Display the game state."""
+            dealer_value = self.calculate_hand_value([card[:-1] for card in dealer_hand])
+            player_value = self.calculate_hand_value([card[:-1] for card in player_hand])
+
             embed = discord.Embed(title="🎲 Blackjack Game", color=discord.Color.blurple())
             embed.add_field(name="Dealer's Hand", value=f"{dealer_hand[0]} ❓", inline=False)
             embed.add_field(name="Your Hand", value=f"{' '.join(player_hand)} ({player_value})", inline=False)
@@ -91,7 +91,7 @@ class Blackjack(commands.Cog):
             embed.add_field(name="Your Balance", value=f"${balance}", inline=True)
             return embed
 
-        # Create buttons for the game
+        # Create a View to manage the game
         view = discord.ui.View()
 
         async def hit_callback(interaction):
@@ -104,12 +104,10 @@ class Blackjack(commands.Cog):
             player_hand.append(self.draw_card())
             player_value = self.calculate_hand_value([card[:-1] for card in player_hand])
 
-            print(f"Player hits! New hand: {player_hand} ({player_value})")  # Debugging line
-
             if player_value > 21:
                 # Player busts
                 result_embed = discord.Embed(title="💥 You Bust!", color=discord.Color.red())
-                result_embed.add_field(name="Dealer's Hand", value=f"{' '.join(dealer_hand)} ({dealer_value})", inline=False)
+                result_embed.add_field(name="Dealer's Hand", value=f"{' '.join(dealer_hand)}", inline=False)
                 result_embed.add_field(name="Your Hand", value=f"{' '.join(player_hand)} ({player_value})", inline=False)
                 result_embed.add_field(name="Result", value="You lose!", inline=False)
                 self.update_user_balance(user_id, -bet)
@@ -126,16 +124,14 @@ class Blackjack(commands.Cog):
                 await interaction.response.send_message("This is not your game!", ephemeral=True)
                 return
 
-            print("Stand button clicked!")  # Debugging line to confirm button press
-
-            # Dealer's turn: The dealer must draw until their value is 17 or more
+            # Dealer's turn
+            dealer_value = self.calculate_hand_value([card[:-1] for card in dealer_hand])
             while dealer_value < 17:
                 dealer_hand.append(self.draw_card())
                 dealer_value = self.calculate_hand_value([card[:-1] for card in dealer_hand])
 
-            print(f"Dealer's final hand: {dealer_hand} ({dealer_value})")  # Debugging line
-
             # Determine the result
+            player_value = self.calculate_hand_value([card[:-1] for card in player_hand])
             if dealer_value > 21 or player_value > dealer_value:
                 result = "You win!"
                 winnings = bet
@@ -146,18 +142,15 @@ class Blackjack(commands.Cog):
                 result = "You lose!"
                 winnings = -bet
 
-            # Update balance
             self.update_user_balance(user_id, winnings)
 
-            # Show final result
+            # Display the result
             result_embed = discord.Embed(title="🎲 Blackjack Result", color=discord.Color.green() if winnings > 0 else discord.Color.red())
             result_embed.add_field(name="Dealer's Hand", value=f"{' '.join(dealer_hand)} ({dealer_value})", inline=False)
             result_embed.add_field(name="Your Hand", value=f"{' '.join(player_hand)} ({player_value})", inline=False)
             result_embed.add_field(name="Result", value=result, inline=False)
-            result_embed.add_field(name="Winnings", value=f"${winnings}", inline=True)
-            result_embed.add_field(name="New Balance", value=f"${self.get_user_balance(user_id)}", inline=False)
+            result_embed.add_field(name="New Balance", value=f"${self.get_user_balance(user_id)}", inline=True)
 
-            # Send the final result and remove buttons
             await interaction.response.edit_message(embed=result_embed, view=None)
 
         # Add buttons to the view
