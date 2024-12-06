@@ -25,7 +25,7 @@ class SkibidiCog(commands.Cog):
             # Create the embed
             embed = discord.Embed(
                 title="😍 Sigma Alert 😍",
-                color=discord.Color.gold()
+                color=discord.Color.brand_red()
             )
             embed.add_field(name="User", value=f"{target_user}", inline=True)
             embed.add_field(name="User ID", value=f"{target_user.id}", inline=True)
@@ -57,7 +57,7 @@ class SigmaNavigationView(View):
         if current_user:
             embed = discord.Embed(
                 title="😍 Sigma Alert 😍 ",
-                color=discord.Color.gold()
+                color=discord.Color.brand_red()
             )
             embed.add_field(name="User", value=f"{current_user}", inline=True)
             embed.add_field(name="User ID", value=f"{current_user.id}", inline=True)
