@@ -29,7 +29,7 @@ class Gamble(commands.Cog):
     @commands.slash_command(name="gamble", description="Choose a gambling game and bet money!")
     async def gamble(self, ctx, bet: int):
         """
-        Provide users with a choice to gamble using Coinflip, Dice Roll, Blackjack, Slots, or HighLow, with a betting system.
+        Provide users with a choice to gamble using Coinflip, Dice Roll, Slots, or HighLow, with a betting system.
         """
         user_id = ctx.author.id
         balance = self.get_user_balance(user_id)
@@ -77,104 +77,78 @@ class Gamble(commands.Cog):
         elif interaction.custom_id == "highlow":
             await self.highlow(ctx, bet)
 
-    async def coinflip(self, ctx, bet):
-        """Coinflip where users choose a side."""
-        options = ["Heads", "Tails"]
-        select_menu = discord.ui.Select(
-            placeholder="Choose Heads or Tails",
-            options=[discord.SelectOption(label=side, value=side) for side in options]
-        )
-        view = discord.ui.View()
-        view.add_item(select_menu)
-
-        async def select_callback(interaction):
-            choice = select_menu.values[0]
-            result = random.choice(options)
-
-            if choice == result:
-                self.update_user_balance(ctx.author.id, bet)
-                description = f"The coin landed on **{result}**! You won **${bet}**!"
-                color = discord.Color.green()
-            else:
-                self.update_user_balance(ctx.author.id, -bet)
-                description = f"The coin landed on **{result}**! You lost **${bet}**!"
-                color = discord.Color.red()
-
-            embed = discord.Embed(
-                title="Coin Flip",
-                description=description,
-                color=color
-            )
-            embed.add_field(name="New Balance", value=f"${self.get_user_balance(ctx.author.id)}", inline=False)
-            await interaction.response.edit_message(embed=embed, view=None)
-
-        select_menu.callback = select_callback
-        await ctx.respond("Pick a side for the coinflip:", view=view)
-
-    async def slots(self, ctx, bet):
-        """Slots game with adjusted payouts."""
-        symbols = ["🍒", "🍋", "🔔", "⭐", "💎"]
-        slot_result = [random.choice(symbols) for _ in range(3)]
-
-        if len(set(slot_result)) == 1:
-            winnings = bet * 3  # Reduced multiplier
-            self.update_user_balance(ctx.author.id, winnings)
-            outcome = f"🎉 JACKPOT! You won **${winnings}**!"
-            color = discord.Color.gold()
-        elif len(set(slot_result)) == 2:
-            winnings = bet * 1.5  # Reduced multiplier
-            self.update_user_balance(ctx.author.id, int(winnings))
-            outcome = f"👏 Close! You won **${int(winnings)}**!"
-            color = discord.Color.blue()
-        else:
-            self.update_user_balance(ctx.author.id, -bet)
-            outcome = f"😢 Better luck next time! You lost **${bet}**."
-            color = discord.Color.red()
+    async def roll_dice(self, ctx, bet):
+        """Roll a dice and calculate rewards."""
+        roll = random.randint(1, 6)
+        reward = bet * roll  # Higher roll = higher reward
+        self.update_user_balance(ctx.author.id, reward - bet)
 
         embed = discord.Embed(
-            title="🎰 Slots Machine",
-            description=f"Result: {' '.join(slot_result)}\n\n{outcome}",
-            color=color
+            title="🎲 Dice Roll",
+            description=f"You rolled a **{roll}**! Your reward is **${reward}**.",
+            color=discord.Color.green() if reward > 0 else discord.Color.red()
         )
         embed.add_field(name="New Balance", value=f"${self.get_user_balance(ctx.author.id)}", inline=False)
-        await ctx.send(embed=embed)
+        await ctx.respond(embed=embed)
 
     async def highlow(self, ctx, bet):
-        """HighLow game with increasing rewards."""
+        """HighLow game with increasing rewards based on probabilities."""
         cards = list(range(2, 15))  # Cards from 2 to Ace (14)
         current_card = random.choice(cards)
         streak = 0
+        total_winnings = 0
 
         async def highlow_round(interaction):
-            nonlocal current_card, streak
+            nonlocal current_card, streak, total_winnings
             guess = interaction.data["custom_id"]
             next_card = random.choice(cards)
+
+            higher_probability = len([c for c in cards if c > current_card]) / len(cards)
+            lower_probability = len([c for c in cards if c < current_card]) / len(cards)
 
             if (guess == "higher" and next_card > current_card) or (guess == "lower" and next_card < current_card):
                 streak += 1
                 current_card = next_card
-                await interaction.response.edit_message(embed=discord.Embed(
+                reward = int(bet * (1 / higher_probability if guess == "higher" else 1 / lower_probability))
+                total_winnings += reward
+
+                embed = discord.Embed(
                     title="HighLow Game",
-                    description=f"Correct! The next card is **{next_card}**.\nCurrent streak: **{streak}**.",
+                    description=f"Correct! The next card is **{next_card}**.\nCurrent streak: **{streak}**.\nTotal Winnings: **${total_winnings}**",
                     color=discord.Color.green()
-                ))
+                )
+                embed.add_field(name="Current Card", value=f"**{current_card}**")
+                await interaction.response.edit_message(embed=embed, view=view)
             else:
                 self.update_user_balance(ctx.author.id, -bet)
-                await interaction.response.edit_message(embed=discord.Embed(
+                embed = discord.Embed(
                     title="HighLow Game",
-                    description=f"Wrong! The next card was **{next_card}**. You lost **${bet}**.",
+                    description=f"Wrong! The next card was **{next_card}**.\nYou lost your bet of **${bet}**.",
                     color=discord.Color.red()
-                ), view=None)
+                )
+                embed.add_field(name="New Balance", value=f"${self.get_user_balance(ctx.author.id)}", inline=False)
+                await interaction.response.edit_message(embed=embed, view=None)
+
+        def cash_out_callback(interaction):
+            self.update_user_balance(ctx.author.id, total_winnings)
+            embed = discord.Embed(
+                title="HighLow Game - Cash Out",
+                description=f"You cashed out with a total of **${total_winnings}**!",
+                color=discord.Color.gold()
+            )
+            embed.add_field(name="New Balance", value=f"${self.get_user_balance(ctx.author.id)}", inline=False)
+            return interaction.response.edit_message(embed=embed, view=None)
 
         embed = discord.Embed(
             title="HighLow Game",
             description=f"The current card is **{current_card}**. Will the next card be higher or lower?",
             color=discord.Color.blue()
         )
-        view = discord.ui.View()
+        view = discord.ui.View(timeout=60)
         view.add_item(discord.ui.Button(label="Higher", style=discord.ButtonStyle.success, custom_id="higher", callback=highlow_round))
         view.add_item(discord.ui.Button(label="Lower", style=discord.ButtonStyle.danger, custom_id="lower", callback=highlow_round))
-        await ctx.send(embed=embed, view=view)
+        view.add_item(discord.ui.Button(label="Cash Out", style=discord.ButtonStyle.primary, callback=cash_out_callback))
+        await ctx.respond(embed=embed, view=view)
 
 def setup(bot):
     bot.add_cog(Gamble(bot))
