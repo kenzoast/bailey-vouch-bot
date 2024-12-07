@@ -2,13 +2,14 @@ import discord
 from discord.ext import commands
 import random
 import sqlite3
+import time
 
-# Connect to SQLite database
+# Connect to SQLite database (creates it if it doesn't exist)
 DB_PATH = "fishing_game.db"
-conn = sqlite3.connect(DB_PATH)
+conn = sqlite3.connect(DB_PATH, check_same_thread=False)
 c = conn.cursor()
 
-# Ensure the users table exists
+# Create the necessary database tables
 c.execute("""
 CREATE TABLE IF NOT EXISTS users (
     user_id INTEGER PRIMARY KEY,
@@ -21,76 +22,131 @@ conn.commit()
 class Fishing(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
-    def get_user_balance(self, user_id):
-        """Retrieve the user's balance from the database."""
-        c.execute("INSERT OR IGNORE INTO users (user_id) VALUES (?)", (user_id,))
-        conn.commit()
-        c.execute("SELECT balance FROM users WHERE user_id = ?", (user_id,))
-        result = c.fetchone()
-        return result[0] if result else 0
+        self.cooldowns = commands.CooldownMapping.from_cooldown(1, 10, commands.BucketType.user)
 
     def update_user_balance(self, user_id, amount):
-        """Update the user's balance."""
+        """Update the user's balance by a specified amount."""
         c.execute("INSERT OR IGNORE INTO users (user_id) VALUES (?)", (user_id,))
         c.execute("UPDATE users SET balance = balance + ? WHERE user_id = ?", (amount, user_id))
         conn.commit()
 
-    @commands.cooldown(rate=1, per=10, type=commands.BucketType.user)
-    @commands.slash_command(name="fish", description="Go fishing to earn money!")
+    def get_user_balance(self, user_id):
+        """Retrieve the user's balance."""
+        c.execute("SELECT balance FROM users WHERE user_id = ?", (user_id,))
+        result = c.fetchone()
+        return result[0] if result else 0
+
+    def update_inventory(self, user_id, fish):
+        """Add fish to the user's inventory."""
+        c.execute("INSERT OR IGNORE INTO users (user_id) VALUES (?)", (user_id,))
+        c.execute("SELECT fish_inventory FROM users WHERE user_id = ?", (user_id,))
+        result = c.fetchone()
+        inventory = eval(result[0]) if result and result[0] else {}
+        inventory[fish] = inventory.get(fish, 0) + 1
+        c.execute("UPDATE users SET fish_inventory = ? WHERE user_id = ?", (str(inventory), user_id))
+        conn.commit()
+
+    def get_inventory(self, user_id):
+        """Retrieve the user's inventory."""
+        c.execute("SELECT fish_inventory FROM users WHERE user_id = ?", (user_id,))
+        result = c.fetchone()
+        return eval(result[0]) if result and result[0] else {}
+
+    @commands.slash_command(name="fish", description="Go fishing and catch some fish!")
     async def fish(self, ctx):
-        """Fishing command with a cooldown."""
-        user_id = ctx.author.id
+        """Fish for random fish and earn money."""
+        # Check cooldown
+        bucket = self.cooldowns.get_bucket(ctx)
+        retry_after = bucket.update_rate_limit()
+        if retry_after:
+            await ctx.respond(f"⏳ You need to wait {retry_after:.1f} seconds before fishing again.", ephemeral=True)
+            return
 
-        # Define fish and rewards
-        fish_types = {
-            "Common Fish": (1, 10),
-            "Uncommon Fish": (11, 30),
-            "Rare Fish": (31, 60),
-            "Epic Fish": (61, 90),
-            "Legendary Fish": (91, 100),
-        }
-        fish_weights = {
-            "Common Fish": 60,
-            "Uncommon Fish": 25,
-            "Rare Fish": 10,
-            "Epic Fish": 4,
-            "Legendary Fish": 1,
+        # Define fish rarities and chances
+        fish_rarities = {
+            "Common Fish": {"chance": 55, "value": 1},
+            "Uncommon Fish": {"chance": 25, "value": 5},
+            "Rare Fish": {"chance": 15, "value": 10},
+            "Epic Fish": {"chance": 4, "value": 15},
+            "Legendary Fish": {"chance": 1, "value": 100},
         }
 
-        # Choose a random fish based on weighted probabilities
-        fish = random.choices(
-            population=list(fish_types.keys()),
-            weights=list(fish_weights.values()),
-            k=1
-        )[0]
+        # Determine which fish is caught
+        fish_pool = []
+        for fish, info in fish_rarities.items():
+            fish_pool.extend([fish] * info["chance"])
+        caught_fish = random.choice(fish_pool)
 
-        # Calculate reward
-        reward = random.randint(*fish_types[fish])
+        # Update inventory
+        self.update_inventory(ctx.author.id, caught_fish)
 
-        # Update user's balance
-        self.update_user_balance(user_id, reward)
-        new_balance = self.get_user_balance(user_id)
+        # Create an embed with the fishing result
+        embed_color = discord.Color.blue()
+        embed_description = f"You caught a **{caught_fish}**!"
 
-        # Create an embed for the result
-        embed = discord.Embed(title="🎣 Fishing Result", color=discord.Color.blurple())
-        embed.add_field(name="You caught a", value=f"**{fish}**!", inline=False)
-        embed.add_field(name="You earned", value=f"${reward}", inline=True)
-        embed.add_field(name="Your new balance", value=f"${new_balance}", inline=True)
+        if caught_fish == "Legendary Fish":
+            embed_color = discord.Color.gold()
+            embed_description = f"🌟 {ctx.author.mention} caught a **LEGENDARY FISH**! 🌟"
+
+        embed = discord.Embed(
+            title="🎣 Fishing Result",
+            description=embed_description,
+            color=embed_color
+        )
+        embed.add_field(name="Fish Value", value=f"${fish_rarities[caught_fish]['value']}", inline=False)
+        embed.set_footer(text="Keep fishing to earn more money!")
 
         await ctx.respond(embed=embed)
 
-    @fish.error
-    async def fish_error(self, ctx, error):
-        """Handle errors for the fishing command."""
-        if isinstance(error, commands.CommandOnCooldown):
-            retry_after = int(error.retry_after)
-            await ctx.respond(
-                f"🕒 You need to wait {retry_after} seconds before fishing again!",
-                ephemeral=True
+    @commands.slash_command(name="sell", description="Sell all your fish for money.")
+    async def sell(self, ctx):
+        """Sell all fish in the user's inventory."""
+        inventory = self.get_inventory(ctx.author.id)
+        if not inventory:
+            embed = discord.Embed(
+                title="No Fish to Sell",
+                description="You don't have any fish to sell. Go fishing first!",
+                color=discord.Color.red()
             )
-        else:
-            raise error
+            await ctx.respond(embed=embed)
+            return
+
+        fish_rarities = {
+            "Common Fish": 10,
+            "Uncommon Fish": 25,
+            "Rare Fish": 50,
+            "Epic Fish": 100,
+            "Legendary Fish": 250,
+        }
+
+        total_earnings = 0
+        for fish, count in inventory.items():
+            total_earnings += fish_rarities.get(fish, 0) * count
+
+        # Update balance and clear inventory
+        self.update_user_balance(ctx.author.id, total_earnings)
+        c.execute("UPDATE users SET fish_inventory = '{}' WHERE user_id = ?", (ctx.author.id,))
+        conn.commit()
+
+        # Create an embed with the sell result
+        embed = discord.Embed(
+            title="💰 Fish Sold",
+            description=f"You sold all your fish for **${total_earnings}**!",
+            color=discord.Color.green()
+        )
+        embed.add_field(name="New Balance", value=f"${self.get_user_balance(ctx.author.id)}", inline=False)
+        await ctx.respond(embed=embed)
+
+    @commands.slash_command(name="balance", description="Check your current balance.")
+    async def balance(self, ctx):
+        """Check the user's current balance."""
+        balance = self.get_user_balance(ctx.author.id)
+        embed = discord.Embed(
+            title="💵 Your Balance",
+            description=f"You currently have **${balance}**.",
+            color=discord.Color.gold()
+        )
+        await ctx.respond(embed=embed)
 
 def setup(bot):
     bot.add_cog(Fishing(bot))
