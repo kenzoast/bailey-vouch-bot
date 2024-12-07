@@ -29,6 +29,28 @@ class StickyMessage(commands.Cog):
 
         await ctx.respond("Sticky message set!", ephemeral=True)
 
+    @commands.slash_command(name="delete_sticky", description="Delete the sticky message in this channel.")
+    async def delete_sticky(self, ctx):
+        """Delete the sticky message in the current channel."""
+        channel_id = ctx.channel.id
+
+        # Check if a sticky message exists for the channel
+        if channel_id in self.sticky_messages:
+            sticky_message_id = self.sticky_messages[channel_id]["message_id"]
+
+            # Attempt to delete the sticky message
+            try:
+                sticky_message = await ctx.channel.fetch_message(sticky_message_id)
+                await sticky_message.delete()
+            except discord.NotFound:
+                pass  # If the message no longer exists, just remove the record
+
+            # Remove the sticky message from the tracking dictionary
+            del self.sticky_messages[channel_id]
+            await ctx.respond("Sticky message deleted!", ephemeral=True)
+        else:
+            await ctx.respond("No sticky message to delete in this channel.", ephemeral=True)
+
     @commands.Cog.listener()
     async def on_message(self, message):
         """Ensure the sticky message remains at the top of the channel."""
