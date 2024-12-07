@@ -46,8 +46,6 @@ class Gamble(commands.Cog):
         class GamblingView(discord.ui.View):
             def __init__(self):
                 super().__init__(timeout=60)
-
-                # Add buttons for each gambling game
                 self.add_item(discord.ui.Button(label="Coinflip", style=discord.ButtonStyle.primary, custom_id="coinflip"))
                 self.add_item(discord.ui.Button(label="Roll a Dice", style=discord.ButtonStyle.secondary, custom_id="roll_dice"))
                 self.add_item(discord.ui.Button(label="Slots", style=discord.ButtonStyle.danger, custom_id="slots"))
@@ -66,7 +64,10 @@ class Gamble(commands.Cog):
         await ctx.respond(embed=embed, view=view)
 
         # Wait for user interaction
-        interaction = await self.bot.wait_for("interaction", check=lambda i: i.custom_id in ["coinflip", "roll_dice", "slots", "highlow"] and i.user.id == ctx.author.id)
+        interaction = await self.bot.wait_for(
+            "interaction",
+            check=lambda i: i.custom_id in ["coinflip", "roll_dice", "slots", "highlow"] and i.user.id == ctx.author.id
+        )
 
         if interaction.custom_id == "coinflip":
             await self.coinflip(ctx, bet)
@@ -78,43 +79,53 @@ class Gamble(commands.Cog):
             await self.highlow(ctx, bet)
 
     async def roll_dice(self, ctx, bet):
-        """Roll a dice and calculate rewards."""
-        roll = random.randint(1, 6)
-        reward = bet * roll  # Higher roll = higher reward
-        self.update_user_balance(ctx.author.id, reward - bet)
+        """Roll a dice and calculate results based on a threshold."""
+        roll = random.randint(1, 100)
+        win = roll >= 50  # Win if the roll is 50 or higher
+
+        if win:
+            winnings = bet * 2  # Double the bet on a win
+            self.update_user_balance(ctx.author.id, winnings)
+            description = f"You rolled a **{roll}** and won **${winnings}**!"
+            color = discord.Color.green()
+        else:
+            self.update_user_balance(ctx.author.id, -bet)
+            description = f"You rolled a **{roll}** and lost your bet of **${bet}**."
+            color = discord.Color.red()
 
         embed = discord.Embed(
-            title="🎲 Dice Roll",
-            description=f"You rolled a **{roll}**! Your reward is **${reward}**.",
-            color=discord.Color.green() if reward > 0 else discord.Color.red()
+            title="🎲 Dice Roll Result",
+            description=description,
+            color=color
         )
         embed.add_field(name="New Balance", value=f"${self.get_user_balance(ctx.author.id)}", inline=False)
         await ctx.respond(embed=embed)
 
     async def highlow(self, ctx, bet):
-        """HighLow game with increasing rewards based on probabilities."""
+        """HighLow game with rewards based on probabilities."""
         cards = list(range(2, 15))  # Cards from 2 to Ace (14)
         current_card = random.choice(cards)
         streak = 0
         total_winnings = 0
 
-        async def highlow_round(interaction):
+        async def play_round(interaction, guess):
             nonlocal current_card, streak, total_winnings
-            guess = interaction.data["custom_id"]
             next_card = random.choice(cards)
 
-            higher_probability = len([c for c in cards if c > current_card]) / len(cards)
-            lower_probability = len([c for c in cards if c < current_card]) / len(cards)
+            higher_prob = len([c for c in cards if c > current_card]) / len(cards)
+            lower_prob = len([c for c in cards if c < current_card]) / len(cards)
 
-            if (guess == "higher" and next_card > current_card) or (guess == "lower" and next_card < current_card):
+            correct_guess = (guess == "higher" and next_card > current_card) or (guess == "lower" and next_card < current_card)
+
+            if correct_guess:
                 streak += 1
-                current_card = next_card
-                reward = int(bet * (1 / higher_probability if guess == "higher" else 1 / lower_probability))
+                reward = int(bet * (1 / higher_prob if guess == "higher" else 1 / lower_prob))
                 total_winnings += reward
+                current_card = next_card
 
                 embed = discord.Embed(
-                    title="HighLow Game",
-                    description=f"Correct! The next card is **{next_card}**.\nCurrent streak: **{streak}**.\nTotal Winnings: **${total_winnings}**",
+                    title="🎴 HighLow Game",
+                    description=f"Correct! The next card was **{next_card}**.\nCurrent Streak: **{streak}**.\nTotal Winnings: **${total_winnings}**.",
                     color=discord.Color.green()
                 )
                 embed.add_field(name="Current Card", value=f"**{current_card}**")
@@ -122,32 +133,32 @@ class Gamble(commands.Cog):
             else:
                 self.update_user_balance(ctx.author.id, -bet)
                 embed = discord.Embed(
-                    title="HighLow Game",
+                    title="🎴 HighLow Game",
                     description=f"Wrong! The next card was **{next_card}**.\nYou lost your bet of **${bet}**.",
                     color=discord.Color.red()
                 )
                 embed.add_field(name="New Balance", value=f"${self.get_user_balance(ctx.author.id)}", inline=False)
                 await interaction.response.edit_message(embed=embed, view=None)
 
-        def cash_out_callback(interaction):
+        async def cash_out(interaction):
             self.update_user_balance(ctx.author.id, total_winnings)
             embed = discord.Embed(
-                title="HighLow Game - Cash Out",
+                title="🎴 HighLow - Cash Out",
                 description=f"You cashed out with a total of **${total_winnings}**!",
                 color=discord.Color.gold()
             )
             embed.add_field(name="New Balance", value=f"${self.get_user_balance(ctx.author.id)}", inline=False)
-            return interaction.response.edit_message(embed=embed, view=None)
+            await interaction.response.edit_message(embed=embed, view=None)
 
         embed = discord.Embed(
-            title="HighLow Game",
-            description=f"The current card is **{current_card}**. Will the next card be higher or lower?",
+            title="🎴 HighLow Game",
+            description=f"The current card is **{current_card}**.\nWill the next card be higher or lower?",
             color=discord.Color.blue()
         )
         view = discord.ui.View(timeout=60)
-        view.add_item(discord.ui.Button(label="Higher", style=discord.ButtonStyle.success, custom_id="higher", callback=highlow_round))
-        view.add_item(discord.ui.Button(label="Lower", style=discord.ButtonStyle.danger, custom_id="lower", callback=highlow_round))
-        view.add_item(discord.ui.Button(label="Cash Out", style=discord.ButtonStyle.primary, callback=cash_out_callback))
+        view.add_item(discord.ui.Button(label="Higher", style=discord.ButtonStyle.success, custom_id="higher", callback=lambda i: play_round(i, "higher")))
+        view.add_item(discord.ui.Button(label="Lower", style=discord.ButtonStyle.danger, custom_id="lower", callback=lambda i: play_round(i, "lower")))
+        view.add_item(discord.ui.Button(label="Cash Out", style=discord.ButtonStyle.primary, callback=cash_out))
         await ctx.respond(embed=embed, view=view)
 
 def setup(bot):
