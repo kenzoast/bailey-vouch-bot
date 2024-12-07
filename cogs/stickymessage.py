@@ -7,9 +7,13 @@ class StickyMessage(commands.Cog):
         self.sticky_messages = {}  # Store sticky message IDs and content for each channel
 
     @commands.slash_command(name="sticky", description="Set a sticky message in a channel.")
-    @commands.has_permissions(administrator=True)
     async def sticky(self, ctx, message: str):
         """Set a sticky message in the current channel."""
+        # Check if the user has administrator permissions
+        if not ctx.author.guild_permissions.administrator:
+            await ctx.respond("You need Administrator permissions to use this command.", ephemeral=True)
+            return
+
         channel_id = ctx.channel.id
 
         # Check for existing sticky message and delete it
@@ -30,16 +34,14 @@ class StickyMessage(commands.Cog):
 
         await ctx.respond("Sticky message set!", ephemeral=True)
 
-    @sticky.error
-    async def sticky_error(self, ctx, error):
-        """Error handler for sticky command."""
-        if isinstance(error, commands.MissingPermissions):
-            await ctx.respond("You need Administrator permissions to use this command.", ephemeral=True)
-
     @commands.slash_command(name="delete_sticky", description="Delete the sticky message in this channel.")
-    @commands.has_permissions(administrator=True)
     async def delete_sticky(self, ctx):
         """Delete the sticky message in the current channel."""
+        # Check if the user has administrator permissions
+        if not ctx.author.guild_permissions.administrator:
+            await ctx.respond("You need Administrator permissions to use this command.", ephemeral=True)
+            return
+
         channel_id = ctx.channel.id
 
         # Check if a sticky message exists for the channel
@@ -59,12 +61,6 @@ class StickyMessage(commands.Cog):
         else:
             await ctx.respond("No sticky message to delete in this channel.", ephemeral=True)
 
-    @delete_sticky.error
-    async def delete_sticky_error(self, ctx, error):
-        """Error handler for delete_sticky command."""
-        if isinstance(error, commands.MissingPermissions):
-            await ctx.respond("You need Administrator permissions to use this command.", ephemeral=True)
-
     @commands.Cog.listener()
     async def on_message(self, message):
         """Ensure the sticky message remains at the top of the channel."""
@@ -80,4 +76,13 @@ class StickyMessage(commands.Cog):
             # Delete the sticky message if it exists
             try:
                 sticky_message = await message.channel.fetch_message(sticky_message_id)
-               
+                await sticky_message.delete()
+            except discord.NotFound:
+                pass  # Sticky message already deleted
+
+            # Resend the sticky message
+            new_sticky_message = await message.channel.send(f"📌 **Sticky Message:** {sticky_content}")
+            self.sticky_messages[channel_id]["message_id"] = new_sticky_message.id
+
+def setup(bot):
+    bot.add_cog(StickyMessage(bot))
