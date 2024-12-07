@@ -82,7 +82,6 @@ bot.load_extension('cogs.cryptochecker')
 bot.load_extension('cogs.eightball')
 bot.load_extension('cogs.fishing')
 bot.load_extension('cogs.blackjack')
-bot.load_extension('cogs.casino')
 bot.load_extension('cogs.stickymessage')
 
 # Run the main bot
