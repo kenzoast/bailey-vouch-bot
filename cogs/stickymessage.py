@@ -30,6 +30,7 @@ class StickyMessage(commands.Cog):
         await ctx.respond("Sticky message set!", ephemeral=True)
 
     @commands.slash_command(name="delete_sticky", description="Delete the sticky message in this channel.")
+    @commands.has_permissions(administrator=True)
     async def delete_sticky(self, ctx):
         """Delete the sticky message in the current channel."""
         channel_id = ctx.channel.id
@@ -50,6 +51,12 @@ class StickyMessage(commands.Cog):
             await ctx.respond("Sticky message deleted!", ephemeral=True)
         else:
             await ctx.respond("No sticky message to delete in this channel.", ephemeral=True)
+
+    @delete_sticky.error
+    async def delete_sticky_error(self, ctx, error):
+        """Error handler for delete_sticky command."""
+        if isinstance(error, commands.MissingPermissions):
+            await ctx.respond("You need Administrator permissions to use this command.", ephemeral=True)
 
     @commands.Cog.listener()
     async def on_message(self, message):
