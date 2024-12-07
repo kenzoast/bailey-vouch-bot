@@ -112,11 +112,11 @@ class Fishing(commands.Cog):
             return
 
         fish_rarities = {
-            "Common Fish": 10,
-            "Uncommon Fish": 25,
-            "Rare Fish": 50,
-            "Epic Fish": 100,
-            "Legendary Fish": 250,
+            "Common Fish": 1,
+            "Uncommon Fish": 5,
+            "Rare Fish": 10,
+            "Epic Fish": 15,
+            "Legendary Fish": 100,
         }
 
         total_earnings = 0
