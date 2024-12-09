@@ -8,7 +8,7 @@ class EmbedBuilder(commands.Cog):
     @commands.slash_command(name="embed", description="Create a custom embed message")
     async def embed(
         self, 
-        interaction: discord.Interaction, 
+        interaction,  # Do not specify type here; Py-Cord automatically passes it
         title: str = None, 
         description: str = None, 
         color: str = None, 
