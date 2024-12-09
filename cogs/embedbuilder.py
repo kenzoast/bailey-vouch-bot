@@ -1,13 +1,12 @@
 import discord
-from discord import app_commands
 from discord.ext import commands
 
 class EmbedBuilder(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="embed", description="Create a custom embed message")
-    @app_commands.describe(
+    @discord.app_commands.command(name="embed", description="Create a custom embed message")
+    @discord.app_commands.describe(
         title="The title of the embed",
         description="The description of the embed",
         color="The hex color for the embed (e.g., #FF5733 or #FFFFFF)",
@@ -83,5 +82,5 @@ class EmbedBuilder(commands.Cog):
         valid_extensions = [".png", ".jpg", ".jpeg", ".gif", ".webp"]
         return url.startswith("http") and any(url.lower().endswith(ext) for ext in valid_extensions)
 
-def setup(bot):
-    bot.add_cog(EmbedBuilder(bot))
+async def setup(bot):
+    await bot.add_cog(EmbedBuilder(bot))
