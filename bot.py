@@ -84,6 +84,7 @@ bot.load_extension('cogs.eightball')
 bot.load_extension('cogs.fishing')
 bot.load_extension('cogs.blackjack')
 bot.load_extension('cogs.stickymessage')
+bot.load_extension("cogs.embedbuilder")
 
 # Run the main bot
 bot.run(TOKEN)
