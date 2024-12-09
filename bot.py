@@ -61,14 +61,29 @@ async def on_ready():
     bot.add_view(TicketPanelView(bot, sqlite3.connect("tickets.db"), 1309886590226661478))  # Use actual DB and category ID
     bot.add_view(CloseTicketView(sqlite3.connect("tickets.db")))
 
-    for filename in os.listdir("cogs"):
-        if filename.endswith('.py'):
-            try:
-                bot.load_extension(f'cogs.{filename[:-3]}')
-                print(f"Successfully loaded {filename}")
-            except Exception as e:
-                print(f"Failed to load {filename}: {e}")
 
+bot.load_extension('cogs.bot_setup')
+bot.load_extension('cogs.credits')
+bot.load_extension('cogs.keys')
+bot.load_extension("cogs.userid") 
+bot.load_extension('cogs.currency')
+bot.load_extension('cogs.purge')
+bot.load_extension('cogs.cat')
+bot.load_extension('cogs.donate')
+bot.load_extension('cogs.rolemanagement')
+bot.load_extension('cogs.maintickets')
+bot.load_extension('cogs.time')
+bot.load_extension('cogs.rockpaperscissors')
+bot.load_extension('cogs.skibidi')
+bot.load_extension('cogs.coinflip')
+bot.load_extension('cogs.avatar')
+bot.load_extension('cogs.info')
+bot.load_extension('cogs.serverinfo')
+bot.load_extension('cogs.cryptochecker')
+bot.load_extension('cogs.eightball')
+bot.load_extension('cogs.fishing')
+bot.load_extension('cogs.blackjack')
+bot.load_extension('cogs.stickymessage')
 
 # Run the main bot
 bot.run(TOKEN)
