@@ -27,34 +27,61 @@ class EmbedBuilder(commands.Cog):
     ):
         """Creates a custom embed with various options."""
         
-        # Default color if none provided
-        embed_color = 0x3498DB  # Default color (blue) if no color is provided
+        # Default color if none is provided
+        embed_color = 0x3498DB  # Default color (blue)
         
         if color:
             try:
                 embed_color = int(color.replace("#", ""), 16)
             except ValueError:
-                await interaction.response.send_message("❌ Invalid color format. Use a hex code like **#FF5733**.", ephemeral=True)
+                await interaction.response.send_message(
+                    "❌ **Invalid color format.** Use a hex code like **#FF5733**.", 
+                    ephemeral=True
+                )
                 return
         
         # Create the embed
         embed = discord.Embed(
-            title=title if title else "No Title Provided",
-            description=description if description else "No Description Provided",
+            title=title if title else "📢 **No Title Provided**",
+            description=description if description else "📝 **No Description Provided**",
             color=embed_color
         )
 
         if footer:
             embed.set_footer(text=footer)
+        
         if thumbnail:
-            embed.set_thumbnail(url=thumbnail)
+            if self.valid_image_url(thumbnail):
+                embed.set_thumbnail(url=thumbnail)
+            else:
+                await interaction.response.send_message(
+                    "❌ **Invalid URL for the thumbnail.** Please provide a valid image URL.", 
+                    ephemeral=True
+                )
+                return
+
         if image:
-            embed.set_image(url=image)
+            if self.valid_image_url(image):
+                embed.set_image(url=image)
+            else:
+                await interaction.response.send_message(
+                    "❌ **Invalid URL for the image.** Please provide a valid image URL.", 
+                    ephemeral=True
+                )
+                return
         
         try:
             await interaction.response.send_message(embed=embed)
         except Exception as e:
-            await interaction.response.send_message(f"❌ Error creating the embed: {e}", ephemeral=True)
+            await interaction.response.send_message(
+                f"❌ **Error creating the embed:** {e}", 
+                ephemeral=True
+            )
 
-async def setup(bot):
-    await bot.add_cog(EmbedBuilder(bot))
+    def valid_image_url(self, url: str) -> bool:
+        """Basic validation for an image URL (checks if URL ends with an image file extension)."""
+        valid_extensions = [".png", ".jpg", ".jpeg", ".gif", ".webp"]
+        return url.startswith("http") and any(url.lower().endswith(ext) for ext in valid_extensions)
+
+def setup(bot):
+    bot.add_cog(EmbedBuilder(bot))
