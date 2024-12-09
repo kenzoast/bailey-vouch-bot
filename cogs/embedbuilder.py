@@ -1,20 +1,11 @@
 import discord
 from discord.ext import commands
-from discord import app_commands  # Ensure this import is correct
 
 class EmbedBuilder(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="embed", description="Create a custom embed message")
-    @app_commands.describe(
-        title="The title of the embed",
-        description="The description of the embed",
-        color="The hex color for the embed (e.g., #FF5733 or #FFFFFF)",
-        footer="The footer of the embed",
-        thumbnail="The URL of the thumbnail image",
-        image="The URL of the main image"
-    )
+    @commands.slash_command(name="embed", description="Create a custom embed message")
     async def embed(
         self, 
         interaction: discord.Interaction, 
