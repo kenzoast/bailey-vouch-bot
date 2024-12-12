@@ -85,7 +85,7 @@ bot.load_extension('cogs.fishing')
 bot.load_extension('cogs.blackjack')
 bot.load_extension('cogs.stickymessage')
 bot.load_extension("cogs.leaderboard")
-bot.load_extension("cogs.embedmaker")
+bot.load_extension("cogs.embedmaker600")
 
 
 # Run the main bot
